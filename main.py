@@ -1,34 +1,35 @@
 from ssh_connection import SSHConnection
 
 def main():
-    print("Welcome to SSH Client!")
-    
-    # Collecting user input for SSH connection details
+    print("Welcome to the Enhanced SSH Client!")
+
     host = input("Enter the host: ")
     port = input("Enter the port (default 22): ") or 22
     username = input("Enter the username: ")
     password = input("Enter the password (leave blank if none): ") or None
 
-    # Create an instance of SSHConnection
     ssh = SSHConnection(host, int(port), username, password)
 
-    # Connect to the server
     ssh.connect()
 
     if ssh.client:
-        # Display options after successful connection
+        print("\nConnected to remote server.")
+        print("You can execute normal SSH commands or use custom commands:")
+        print("Custom Commands:")
+        print("- `viewfl <remote_path>`: List remote files in a specific directory.")
+        print("- `upload <local_file> <remote_path>`: Upload a local file to a remote path.")
+        print("- `download <remote_file> <local_path>`: Download a remote file to a local path.")
+        print("- `exit`: Disconnect and exit the program.")
+
         while True:
-            print("\nAvailable Commands:")
-            print("1. List Remote Files")
-            print("2. Upload File")
-            print("3. Download File")
-            print("4. Execute Command")
-            print("5. Exit")
+            command = input(f"{username}@{host}> ")
 
-            choice = input("Enter command number: ")
-
-            if choice == '1':
-                remote_path = input("Enter remote path (default .): ") or "."
+            
+            if command.startswith("viewfl"):
+                try:
+                    _, remote_path = command.split(" ", 1)
+                except ValueError:
+                    remote_path = "."
                 files = ssh.list_remote_files(remote_path)
                 if isinstance(files, list):
                     print("\nRemote Files:")
@@ -37,27 +38,31 @@ def main():
                 else:
                     print(files)
 
-            elif choice == '2':
-                local_file = input("Enter local file path to upload: ")
-                remote_path = input("Enter remote directory to upload to: ")
+            elif command.startswith("upload"):
+                try:
+                    _, local_file, remote_path = command.split(" ", 2)
+                except ValueError:
+                    print("Usage: upload <local_file> <remote_path>")
+                    continue
                 ssh.upload_file(local_file, remote_path)
 
-            elif choice == '3':
-                remote_file = input("Enter remote file path to download: ")
-                local_path = input("Enter local path to save the file: ")
+            elif command.startswith("download"):
+                try:
+                    _, remote_file, local_path = command.split(" ", 2)
+                except ValueError:
+                    print("Usage: download <remote_file> <local_path>")
+                    continue
                 ssh.download_file(remote_file, local_path)
 
-            elif choice == '4':
-                command = input("Enter command to execute on remote server: ")
-                output = ssh.execute_command(command)
-                print(f"\nCommand Output:\n{output}")
-
-            elif choice == '5':
+            elif command == "exit":
                 ssh.close()
-                print("Exiting...")
+                print("Disconnected from the server. Exiting...")
                 break
+
             else:
-                print("Invalid choice, please try again.")
+            
+                output = ssh.execute_command(command)
+                print(output)
 
 if __name__ == "__main__":
     main()
